@@ -1,0 +1,35 @@
+project:
+  name: AuditLens Quant
+  as_of_date: "2026-09-30"
+  universe_file: "configs/universe.csv"
+  price_start: "2020-01-01"
+  price_end: "2026-10-01"
+  benchmark_ticker: "510300.SS"
+  financial_frequency: "yearly"
+  earnings_date_window_days: 150
+  fallback_publication_lag_days: 120
+
+factors:
+  winsor_lower: 0.05
+  winsor_upper: 0.95
+  minimum_factor_count: 5
+  industry_neutral: true
+  minimum_industry_size: 3
+  weights:
+    cfo_to_net_income: 0.16
+    accrual_quality: 0.15
+    free_cash_flow_to_assets: 0.12
+    net_margin: 0.10
+    low_leverage: 0.15
+    interest_coverage: 0.10
+    cash_to_debt: 0.08
+    receivables_efficiency: 0.07
+    inventory_efficiency: 0.07
+
+backtest:
+  rebalance_frequency: "ME"
+  exclude_bottom_fraction: 0.20
+  minimum_names: 8
+  transaction_cost_bps: 10
+  annualization_periods: 12
+  out_of_sample_start: "2024-01-01"

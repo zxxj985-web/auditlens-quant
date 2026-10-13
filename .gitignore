@@ -1,0 +1,16 @@
+.DS_Store
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+.env
+
+# Downloaded market data is intentionally not published.
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Generated summary tables, figures, and the report stay versioned so that
+# reviewers can inspect the evidence without downloading the raw data.

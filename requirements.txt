@@ -1,0 +1,8 @@
+numpy>=1.26
+pandas>=2.2
+matplotlib>=3.8
+PyYAML>=6.0
+pyarrow>=15.0
+yfinance>=0.2.50
+pytest>=8.0
+baostock>=0.9.4

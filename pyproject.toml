@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "auditlens-quant"
+version = "0.1.0"
+description = "Point-in-time A-share accounting-quality and credit-risk factor research"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Zijun Zhou"}]
+dependencies = [
+  "numpy>=1.26",
+  "pandas>=2.2",
+  "matplotlib>=3.8",
+  "PyYAML>=6.0",
+  "pyarrow>=15.0",
+  "yfinance>=0.2.50",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+baostock = ["baostock>=0.9.4"]
+
+[project.scripts]
+auditlens = "auditlens.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"
