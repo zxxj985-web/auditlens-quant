@@ -1,5 +1,5 @@
 project:
-  name: AuditLens Quant
+  name: AuditLens Alpha
   as_of_date: "2026-09-30"
   universe_file: "configs/universe.csv"
   price_start: "2020-01-01"
@@ -12,10 +12,11 @@ project:
 factors:
   winsor_lower: 0.05
   winsor_upper: 0.95
-  minimum_factor_count: 5
+  minimum_quality_factor_count: 5
+  minimum_alpha_factor_count: 6
   industry_neutral: true
   minimum_industry_size: 3
-  weights:
+  quality_weights:
     cfo_to_net_income: 0.16
     accrual_quality: 0.15
     free_cash_flow_to_assets: 0.12
@@ -25,11 +26,47 @@ factors:
     cash_to_debt: 0.08
     receivables_efficiency: 0.07
     inventory_efficiency: 0.07
+  alpha_weights:
+    free_cash_flow_yield: 0.25
+    accrual_quality: 0.15
+    cfo_to_net_income: 0.10
+    low_leverage_change: 0.15
+    net_margin_change: 0.10
+    receivables_efficiency_change: 0.10
+    low_volatility_6m: 0.15
+  diagnostic_factors:
+    - cfo_to_net_income_change
+    - accrual_quality_change
+    - free_cash_flow_to_assets_change
+    - inventory_efficiency_change
+    - cash_to_debt_change
+    - interest_coverage_change
+    - momentum_6_1
+    - trend_10m
+    - earnings_yield
+    - book_to_price
+  components:
+    cashflow_quality:
+      - free_cash_flow_yield
+      - accrual_quality
+      - cfo_to_net_income
+    operating_improvement:
+      - low_leverage_change
+      - net_margin_change
+      - receivables_efficiency_change
+    defensive_risk:
+      - low_volatility_6m
 
 backtest:
   rebalance_frequency: "ME"
-  exclude_bottom_fraction: 0.20
-  minimum_names: 8
+  score_column: "alpha_score"
+  selection_fraction: 0.30
+  quality_filter_exclude_fraction: 0.20
+  minimum_names: 6
   transaction_cost_bps: 10
   annualization_periods: 12
-  out_of_sample_start: "2024-01-01"
+  validation_start: "2026-01-01"
+  momentum_months: 6
+  momentum_skip_months: 1
+  trend_months: 10
+  volatility_months: 6

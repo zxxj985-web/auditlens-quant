@@ -33,6 +33,15 @@ STATEMENT_FIELDS: dict[str, tuple[str, ...]] = {
     "total_debt": ("Total Debt",),
     "accounts_receivable": ("Accounts Receivable", "Receivables"),
     "inventory": ("Inventory",),
+    "common_equity": (
+        "Stockholders Equity",
+        "Common Stock Equity",
+        "Total Equity Gross Minority Interest",
+    ),
+    "shares_outstanding": (
+        "Ordinary Shares Number",
+        "Share Issued",
+    ),
     "operating_cash_flow": (
         "Operating Cash Flow",
         "Total Cash From Operating Activities",

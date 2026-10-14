@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "auditlens-quant"
-version = "0.1.0"
-description = "Point-in-time A-share accounting-quality and credit-risk factor research"
+version = "0.2.0"
+description = "Point-in-time A-share multi-factor alpha research and backtesting system"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}

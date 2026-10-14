@@ -8,6 +8,7 @@ import pandas as pd
 from auditlens.backtest import run_backtest
 from auditlens.data import fetch_all, load_cached_data
 from auditlens.features import (
+    add_market_factors,
     align_factors_point_in_time,
     build_fundamental_factors,
     monthly_rebalance_dates,
@@ -29,6 +30,7 @@ def _run_analysis(config: dict) -> None:
         config["backtest"]["rebalance_frequency"],
     )
     panel = align_factors_point_in_time(factors, rebalance_dates)
+    panel = add_market_factors(panel, prices, config["backtest"])
     scored = score_cross_sections(panel, config["factors"])
     result = run_backtest(
         prices=prices,
@@ -41,6 +43,7 @@ def _run_analysis(config: dict) -> None:
     processed = PROJECT_ROOT / "data/processed"
     scored.to_parquet(processed / "factor_panel.parquet", index=False)
     result.weights.to_parquet(processed / "strategy_weights.parquet")
+    result.quality_filter_weights.to_parquet(processed / "quality_filter_weights.parquet")
 
     tables = PROJECT_ROOT / "outputs/tables"
     result.performance.to_csv(tables / "monthly_performance.csv", index_label="date")
@@ -50,8 +53,8 @@ def _run_analysis(config: dict) -> None:
     (
         scored.groupby("rebalance_date")
         .agg(
-            scored_companies=("quality_score", "count"),
-            median_factor_count=("factor_count", "median"),
+            scored_companies=("alpha_score", "count"),
+            median_alpha_factor_count=("alpha_factor_count", "median"),
             newest_statement=("stat_date", "max"),
         )
         .to_csv(tables / "data_quality_by_month.csv")
@@ -64,7 +67,7 @@ def _run_analysis(config: dict) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="AuditLens Quant research pipeline")
+    parser = argparse.ArgumentParser(description="AuditLens Alpha research pipeline")
     parser.add_argument("--config", default=str(DEFAULT_CONFIG), help="Path to YAML configuration")
     subparsers = parser.add_subparsers(dest="command", required=True)
 

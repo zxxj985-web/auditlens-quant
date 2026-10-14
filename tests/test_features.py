@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from auditlens.features import (
+    add_market_factors,
     align_factors_point_in_time,
     build_fundamental_factors,
     score_cross_sections,
@@ -83,3 +84,68 @@ def test_score_requires_minimum_number_of_factors():
     scored = score_cross_sections(panel, config).set_index("ticker")
     assert pd.notna(scored.loc["A", "quality_score"])
     assert pd.isna(scored.loc["C", "quality_score"])
+
+
+def test_improvement_factors_reward_better_cash_conversion_and_lower_leverage():
+    frame = pd.DataFrame(
+        {
+            "ticker": ["AAA", "AAA"],
+            "company": ["A", "A"],
+            "industry": ["One", "One"],
+            "stat_date": pd.to_datetime(["2023-12-31", "2024-12-31"]),
+            "publication_date": pd.to_datetime(["2024-04-01", "2025-04-01"]),
+            "publication_date_source": ["reported_earnings_date"] * 2,
+            "revenue": [100.0, 120.0],
+            "net_income": [10.0, 12.0],
+            "ebit": [14.0, 18.0],
+            "interest_expense": [2.0, 2.0],
+            "gross_profit": [30.0, 38.0],
+            "total_assets": [100.0, 110.0],
+            "total_liabilities": [60.0, 50.0],
+            "current_assets": [45.0, 55.0],
+            "current_liabilities": [30.0, 25.0],
+            "cash": [12.0, 20.0],
+            "total_debt": [40.0, 30.0],
+            "accounts_receivable": [20.0, 18.0],
+            "inventory": [15.0, 14.0],
+            "operating_cash_flow": [8.0, 15.0],
+            "free_cash_flow": [5.0, 11.0],
+            "shares_outstanding": [10.0, 10.0],
+            "common_equity": [40.0, 60.0],
+        }
+    )
+    factors = build_fundamental_factors(frame).sort_values("stat_date")
+    latest = factors.iloc[-1]
+    assert latest["cfo_to_net_income_change"] > 0
+    assert latest["low_leverage_change"] > 0
+    assert latest["receivables_efficiency_change"] > 0
+
+
+def test_market_factors_use_only_prices_available_at_rebalance_date():
+    dates = pd.date_range("2024-01-31", periods=9, freq="ME")
+    prices = pd.DataFrame({"AAA": np.arange(10.0, 19.0)}, index=dates)
+    panel = pd.DataFrame(
+        {
+            "rebalance_date": [dates[7]],
+            "ticker": ["AAA"],
+            "net_income": [2.0],
+            "free_cash_flow": [3.0],
+            "common_equity": [20.0],
+            "shares_outstanding": [2.0],
+        }
+    )
+    config = {
+        "rebalance_frequency": "ME",
+        "momentum_months": 6,
+        "momentum_skip_months": 1,
+        "trend_months": 3,
+        "volatility_months": 3,
+    }
+    original = add_market_factors(panel, prices, config).iloc[0]
+    changed_future = prices.copy()
+    changed_future.loc[dates[8], "AAA"] = 10_000.0
+    rerun = add_market_factors(panel, changed_future, config).iloc[0]
+    assert np.isclose(original["momentum_6_1"], prices.loc[dates[6], "AAA"] / prices.loc[dates[0], "AAA"] - 1)
+    assert np.isclose(original["market_cap"], prices.loc[dates[7], "AAA"] * 2.0)
+    assert np.isclose(original["momentum_6_1"], rerun["momentum_6_1"])
+    assert np.isclose(original["trend_10m"], rerun["trend_10m"])

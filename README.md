@@ -1,59 +1,79 @@
-# AuditLens Quant
+# AuditLens Alpha
 
-AuditLens Quant is a point-in-time research project that combines accounting-quality signals with corporate credit-risk analysis to test an A-share defensive equity strategy.
+AuditLens Alpha is a point-in-time A-share factor-research and portfolio-engineering project. It tests whether a focused combination of cash-flow quality, operating improvement, and defensive risk can improve a long-only equity portfolio after publication lags, turnover, and transaction costs.
 
-The project is designed around three practical perspectives: audit-style financial statement review, corporate banking credit analysis, and reproducible Python-based quantitative research.
+The project is built as a reproducible research system rather than a personal-experience narrative. Its main purpose is to demonstrate factor design, time-series alignment, portfolio construction, validation discipline, testing, and honest failure analysis for future quantitative research or trading-development work.
 
 ## Research question
 
-Can public accounting-quality and debt-service indicators act as a useful risk filter for a long-only A-share portfolio after accounting for publication dates, turnover, and transaction costs?
+Can a compact, economically interpretable signal outperform a broad quality filter and an equal-weight universe without relying on future financial statements?
 
-The project does **not** assume that the strategy will outperform. All conclusions are generated from the actual backtest.
+The current candidate signal combines:
 
-## Current result snapshot
+- free-cash-flow yield;
+- accrual quality and operating cash-flow conversion;
+- year-over-year improvement in leverage, margin, and receivables efficiency;
+- six-month low volatility.
 
-Data through 2026-09-30 produced 42 monthly observations from 27 companies. The accounting-quality filter modestly improved the static-universe equal-weight portfolio, but it did not beat the CSI 300 ETF proxy.
+Each month the strategy selects the highest-scoring 30% of eligible companies, subject to a six-name diversification floor, and holds them at equal weights during the following month.
+
+## Current evidence
+
+Data through 2026-09-30 produced 30 investable monthly observations from a static universe of 27 large non-financial A-share companies.
 
 | Period | Portfolio | Annualized return | Sharpe | Maximum drawdown |
 |---|---|---:|---:|---:|
-| Full | AuditLens strategy | 1.93% | 0.099 | -19.32% |
-| Full | Eligible-universe equal weight | 1.74% | 0.093 | -19.06% |
-| Full | CSI 300 ETF proxy | 4.66% | 0.241 | -19.42% |
-| 2024 onward | AuditLens strategy | 7.17% | 0.360 | -10.83% |
-| 2024 onward | Eligible-universe equal weight | 6.11% | 0.318 | -11.18% |
-| 2024 onward | CSI 300 ETF proxy | 11.75% | 0.570 | -11.70% |
+| Full research sample | AuditLens Alpha | 16.05% | 0.865 | -9.76% |
+| Full research sample | V1 quality filter | 5.40% | 0.276 | -10.83% |
+| Full research sample | Eligible-universe equal weight | 6.56% | 0.347 | -10.31% |
+| Full research sample | CSI 300 ETF proxy | 11.70% | 0.569 | -11.70% |
+| 2026 validation window | AuditLens Alpha | 0.72% | 0.053 | -9.76% |
+| 2026 validation window | V1 quality filter | -10.81% | -0.613 | -10.56% |
+| 2026 validation window | Eligible-universe equal weight | -10.30% | -0.639 | -10.31% |
+| 2026 validation window | CSI 300 ETF proxy | -5.73% | -0.341 | -11.70% |
 
-These figures are descriptive, not evidence of a durable alpha. The composite score's mean monthly Rank IC was approximately zero, while accrual quality and cash-flow-to-income were the strongest individual signals in this small sample.
+The full-sample result is encouraging, but it is not proof of durable alpha. The factor family was refined after diagnostics, and the 2026 window informed model selection, so it is a validation window rather than an untouched test set. A locked walk-forward or live-forward test is still required.
 
 ![Cumulative wealth](outputs/figures/cumulative_returns.png)
 
-## Method
+## What changed from V1
 
-- Uses a transparent static universe of 27 large non-financial A-share companies.
-- Builds nine interpretable signals covering cash-flow quality, accruals, profitability, leverage, liquidity, receivables, and inventory.
-- Uses reported earnings dates when available and a conservative 120-day fallback lag otherwise.
-- Prevents look-ahead by applying month-end signals only to the following month's return.
-- Winsorizes and standardizes factors cross-sectionally, with industry neutralization when the group is large enough.
-- Compares a strategy that excludes the bottom 20% of companies with an eligible-universe equal-weight portfolio and a liquid CSI 300 ETF proxy (`510300.SS`).
-- Models turnover and 10 bps one-way transaction costs.
-- Reports full-period and post-2024 out-of-sample results.
+V1 retained 80% of the universe after removing companies with the weakest static financial quality. It behaved primarily as a risk filter.
+
+V2 makes four structural changes:
+
+1. It targets a concentrated top-ranked portfolio rather than merely excluding the bottom tail.
+2. It uses changes in fundamentals, not only their levels.
+3. It adds point-in-time valuation using historical shares outstanding and month-end prices.
+4. It treats unsuccessful candidates, including broad momentum and trend signals, as diagnostics instead of hiding them.
+
+The V1 portfolio remains in every output as `quality_filter`, providing a direct baseline.
+
+## Research controls
+
+- Financial statements are aligned to reported earnings dates when available.
+- A conservative 120-day lag is used when a publication date is unavailable.
+- Month-end signals are applied only to the following month's return.
+- Cross-sectional factors are winsorized, standardized, and industry-neutralized when possible.
+- The model requires at least six of the seven production factors for eligibility.
+- Portfolio selection uses the top 30%, with a minimum of six holdings.
+- Results include 10 bps of modeled one-way turnover cost.
+- Automated tests cover publication-date leakage, market-feature timing, factor directions, portfolio selection, costs, and drawdown.
 
 ## Quick start
-
-The repository was developed with Anaconda Python. Create or activate an environment, then install the project:
 
 ```bash
 python -m pip install -e ".[dev]"
 python -m auditlens all --force
 ```
 
-To reuse the downloaded cache:
+Reuse the local data cache:
 
 ```bash
 python -m auditlens run
 ```
 
-Run tests:
+Run the test suite:
 
 ```bash
 pytest
@@ -61,34 +81,37 @@ pytest
 
 ## Outputs
 
-- `outputs/tables/performance_metrics.csv`: full and out-of-sample metrics
-- `outputs/tables/monthly_performance.csv`: monthly strategy, baseline, and benchmark returns
-- `outputs/tables/factor_rank_ic.csv`: monthly cross-sectional Rank IC
+- `outputs/tables/performance_metrics.csv`: full-sample and validation metrics
+- `outputs/tables/monthly_performance.csv`: Alpha, V1, equal-weight, and benchmark returns
+- `outputs/tables/factor_rank_ic.csv`: monthly cross-sectional Rank IC for production and rejected factors
 - `outputs/figures/`: cumulative wealth, drawdown, rolling Sharpe, coverage, and IC figures
-- `reports/generated/AuditLens_Quant_Report.md`: automatically generated Chinese research report
+- `reports/generated/AuditLens_Alpha_Report.md`: automatically generated Chinese report
+- `data/processed/factor_panel.parquet`: local point-in-time research panel, excluded from Git
 
-Downloaded raw and processed data are excluded from Git. Derived summary tables, charts, and the generated report are retained so the research claims remain inspectable.
+Downloaded raw and processed data remain outside version control. Derived tables, figures, and the generated report are committed so the published claims can be inspected.
 
 ## Structure
 
 ```text
 auditlens-quant/
-├── configs/              # Universe and research settings
+├── configs/              # Universe, factors, and portfolio settings
 ├── data/                 # Local raw and processed data; ignored by Git
-├── docs/                 # Research design and methodology
-├── notebooks/            # Recruiter-friendly walkthrough
+├── docs/                 # Research design, data dictionary, presentation guide
+├── notebooks/            # Evidence-oriented walkthrough
 ├── outputs/              # Versioned summary tables and figures
 ├── reports/generated/    # Versioned generated report
-├── src/auditlens/        # Data, factor, backtest, and reporting code
-└── tests/                # Leakage, factor-direction, and cost tests
+├── src/auditlens/        # Data, features, portfolio, and reporting code
+└── tests/                # Leakage, timing, selection, and cost tests
 ```
 
 ## Important limitations
 
-- The initial universe is static and therefore subject to survivorship bias.
+- The universe is static and subject to survivorship bias.
+- The research period is short because free statement history is limited.
 - Yahoo Finance may revise historical statement fields.
-- Annual statements update slowly and do not represent a high-frequency signal.
-- Banks and insurers are excluded because they require a different balance-sheet and capital-adequacy framework.
+- The 2026 window is not a pristine holdout because it informed candidate selection.
+- The execution model does not simulate limit-up/limit-down, suspensions, taxes, or market impact in full.
+- Banks and insurers require a separate factor definition and are excluded.
 - This is educational research, not investment advice.
 
-See [`docs/research_design.md`](docs/research_design.md) for formulas, timing rules, and the validation plan.
+See [`docs/research_design.md`](docs/research_design.md) for formulas and the validation roadmap, and [`docs/research_presentation.md`](docs/research_presentation.md) for a research-focused presentation guide.
